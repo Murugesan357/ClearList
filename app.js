@@ -14,7 +14,7 @@ var app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:8000",
+    origin: process.env.CLIENT_URL,
     credentials: true
   })
 );
@@ -35,7 +35,7 @@ app.use(async function (req,res,next){
     const accessToken = CommonService.decryptDetails(req.headers.authorization);
       req.headers.authorization = accessToken;
   }
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000');
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, OPTIONS, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');

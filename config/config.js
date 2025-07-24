@@ -11,7 +11,7 @@ CONFIG.db_name = process.env.DB_NAME;
 CONFIG.db_port = process.env.DB_PORT;
 CONFIG.db_dialect = process.env.DIALECT;
 
-CONFIG.jwt_encryption = process.env.JWT_ENCRYPTION || "APP2024";
+CONFIG.jwt_encryption = process.env.JWT_ENCRYPTION || "APP2025";
 CONFIG.jwt_expiration = process.env.JWT_EXPIRATION || "10000";
 
 CONFIG.secret_key = process.env.SECRET_KEY || "mysecretkey";

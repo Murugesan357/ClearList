@@ -23,7 +23,6 @@ const updateTask = async (id, data) => {
     returning: true
   }));
   if(updateErr) return TE(updateErr.message);
-  console.log(updateTask)
   return updateTask[1]?.[0]; 
 }
 module.exports.updateTask = updateTask
