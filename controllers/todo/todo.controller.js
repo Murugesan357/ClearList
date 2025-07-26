@@ -20,7 +20,7 @@ const updateTask = async (req,res) =>{
 }
 
 const getOneUserTask = async (req,res) =>{
-  const [taskErr, taskDetails] = await to(TaskService.getOneUserTask(req?.query?.userId));
+  const [taskErr, taskDetails] = await to(TaskService.getOneUserTask(req?.query));
   if(taskErr) return ReE(res, taskErr.message, 422);
   if(taskDetails) return ReS(res, taskDetails, 200);
 }

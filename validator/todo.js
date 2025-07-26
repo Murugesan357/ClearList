@@ -13,6 +13,7 @@ const taskValidator = {
 
     getOneUserTask: [
         query('userId').isNumeric().withMessage('userId should be number'),
+        query('sortBy').isString().withMessage('sortBy should be string'),
         checkExact([],{message: "Invalid data! extra parameters not allowed"})
     ],
 

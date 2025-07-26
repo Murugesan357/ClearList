@@ -1,11 +1,9 @@
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
-require('../../config/config');
 require('../../global_functions');
 
 const todos = require('../../models').todos;
-const Users = require('../../models').users;
 
 const createTask = async (data) =>{
   const [createErr, createposts] = await to(todos.create(data));
@@ -27,12 +25,14 @@ const updateTask = async (id, data) => {
 }
 module.exports.updateTask = updateTask
 
-const getOneUserTask = async (userId) => {
+const getOneUserTask = async (data) => {
+  const order = data?.sortBy === 'dueDate' ? [['due_date', 'ASC']] : [['created_at','DESC']]
   const [taskErr, tasks] = await to(todos.findAll({
     where:{
-      userId: userId, 
+      userId: data?.userId, 
       isDeleted: false 
-    }
+    },
+    order: order
   }));
   if(taskErr) return TE(taskErr.message);
   return tasks; 
