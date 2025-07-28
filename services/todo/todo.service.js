@@ -6,6 +6,7 @@ require('../../global_functions');
 const todos = require('../../models').todos;
 
 const createTask = async (data) =>{
+  data.dueDate = data?.dueDate ?? new Date()
   const [createErr, createposts] = await to(todos.create(data));
   if(createErr) return TE(createErr.message);
   return createposts; 
@@ -13,6 +14,7 @@ const createTask = async (data) =>{
 module.exports.createTask = createTask
 
 const updateTask = async (id, data) => {
+  data.dueDate = data?.dueDate ?? new Date()
   const [updateErr, updateTask] = await to(todos.update(data, {
     where:{
       id: id,

@@ -43,11 +43,31 @@ const getOneUser = async (req, res) =>{
   return ReS(res, userDetails, 200);
 }
 
+const updatePassword = async(req,res) =>{
+  const[passwordErr, updateUserPassword] = await to(UserService.updatePassword(req?.body))
+  if(passwordErr) return ReE(res, passwordErr.message, 422);
+  return ReS(res, updateUserPassword, 200);
+}
+
+const sendVerificationCode = async(req,res) =>{
+  const[sendMailErr, sendMail] = await to(UserService.sendVerificationCode(req?.body))
+  if(sendMailErr) return ReE(res, sendMailErr.message, 422);
+  return ReS(res, sendMail, 200);
+}
+
+const verifyOtp = async(req,res) =>{
+  const[verificationErr, verifyOtp] = await to(UserService.verifyOtp(req?.body))
+  if(verificationErr) return ReE(res, verificationErr.message, 422);
+  return ReS(res, verifyOtp, 200);
+}
 
 router.post('/login', apiLimiter, UserValidator.login, validate.validate, login)
+router.post('/signup', UserValidator.userSignup, validate.validate, userSignup)
+router.post('/sendmail', sendVerificationCode)
+router.post('/verifyotp', verifyOtp)
+router.post('/forgotpassword', updatePassword)
 router.get('/:id', passport.authenticate('jwt', { session: false }), getOneUser)
 router.put('/:id', passport.authenticate('jwt', { session: false }), updateUserDetails)
 router.get('', passport.authenticate('jwt', { session: false }), getAllUser)
-router.post('/signup', UserValidator.userSignup, validate.validate, userSignup)
 
 module.exports = {router, userSignup, login, updateUserDetails, getAllUser, getOneUser}

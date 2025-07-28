@@ -1,13 +1,15 @@
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 require('../../config/config');
 require('../../global_functions');
 
 const Users = require('../../models').users 
-const UserCategoryMappings = require('../../models').userCategoryMappings 
-const CommonService = require('../../services/common.service')
-
+const Otp = require('../../models').otp
+const CommonService = require('../../services/common.service');
+const sendMail = require('../../utils/mailer').sendVerificationCode;
 
 const userSignup = async (data) =>{
   if(data?.email){
@@ -86,9 +88,70 @@ const getOneUser = async (whereCondition) => {
 }
 module.exports.getOneUser = getOneUser;
 
+const updatePassword = async (data) => {
+  const [err, user] = await to(Users.findOne({ where: { email: data?.email } }));
+  if (err || !user) return TE('User not found');
 
-const userCategoryMapping = async (data) =>{
-  const [categoryMappingErr, categoryMapping] = await to (UserCategoryMappings.create(data));
-    if(categoryMappingErr) return TE(categoryMappingErr.message);
-    return categoryMapping;
+  if(data?.currentPassword){
+    const isMatch = await bcrypt.compare(data?.currentPassword, user.password);
+    if (!isMatch) return TE('Invalid password');
+  }
+  user.password = data?.newPassword;
+  await user.save();
+
+  return { success: true, message: 'Password updated successfully' };
 }
+module.exports.updatePassword = updatePassword;
+
+const sendVerificationCode = async({email}) =>{
+  const [getOneUserErr, getOneUser] = await to (Users.findOne({
+    where:{
+      email
+    }
+  }));
+  if(getOneUserErr || !getOneUser) return TE(`Failed to get User Details - Error: ${getOneUserErr??'User not found'}`);
+
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedOtp = await bcrypt.hash(verificationCode, 10);
+
+  const [createErr, createOtp] = await to (Otp.create({
+    userId: getOneUser.id,
+    hashedOtp,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 mins
+  }));
+
+  const [sendMailErr, sendMailOtp] = await to(sendMail(email,getOneUser?.firstName, verificationCode))
+  if(sendMailErr) return TE(sendMailErr.message);
+  if(sendMailOtp?.success) return sendMailOtp;
+  return TE(sendMailOtp?.error);
+}
+module.exports.sendVerificationCode = sendVerificationCode;
+
+
+const verifyOtp = async(data)=>{
+    const { email, otp } = data;
+    if (!email || !otp) return TE('Email and OTP are required');
+
+    const [getUserErr, user] = await to (Users.findOne({
+      where: {email}
+    }));
+    if(getUserErr || !getOneUser) return TE(`Failed to get User Details - Error: ${getUserErr??'User not found'}`);
+
+    const [getOtpErr, otpRecord] = await to (Otp.findOne({
+      where: { userId: user.id, isUsed: false },
+      order: [['createdAt', 'DESC']]
+    }))
+    if(getOtpErr) return TE(getOtpErr.message);
+
+    if (!otpRecord) return TE('OTP not found or already used');
+    if (otpRecord.expiresAt < new Date()) return TE('OTP expired');
+
+    const isMatch = await bcrypt.compare(otp, otpRecord.hashedOtp);
+    if (!isMatch) return TE('Invalid OTP');
+
+    otpRecord.isUsed = true;
+    await otpRecord.save();
+
+    return ({ isVerified: true, message: 'OTP verified successfully' });
+}
+module.exports.verifyOtp = verifyOtp;
